@@ -1,0 +1,5 @@
+.eslintrc.json
+.git
+.prettierrc
+.gitignore
+/node_modules/

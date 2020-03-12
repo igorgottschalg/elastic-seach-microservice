@@ -1,0 +1,41 @@
+version: "3.7"
+
+services:
+  webserver:
+    container_name: search-index
+    build: ./
+    environment:
+      - PORT=3000
+      - AUTH_USER=elastic
+      - AUTH_PASSWORD=Gottschalg
+      - ELASTIC_USER=elastic
+      - ELASTIC_PASSWORD=Gottschalg
+      - ELASTIC_HOST=http://elasticsearch:9200
+      - DOMAINS=http://google.com
+    ports:
+      - 3000:3000
+    networks:
+      - fronend
+
+  elasticsearch:
+    container_name: search-database
+    image: docker.elastic.co/elasticsearch/elasticsearch-oss:6.5.1
+    environment:
+      - discovery.type=single-node
+      - cluster.name=docker-
+      - bootstrap.memory_lock=
+      - ELASTICSEARCH_USERNAME=elastic
+      - ELASTICSEARCH_PASSWORD=Gottschalg
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    ports:
+      - 9200:9200
+    volumes:
+      - ./config/elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml
+      - ./elasticsearch-data:/usr/share/elasticsearch/data/
+    networks:
+      - fronend
+
+networks:
+  fronend:
+  backend:
+    internal: true
