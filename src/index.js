@@ -92,8 +92,10 @@ app.post('/add', async (req, res) => {
             body: object,
         });
         res.status(200).send(body);
+        console.log(object);
     } catch (e) {
-        res.status(404).send(e);
+        res.status(500).send("internal error");
+        console.error(e);
     }
 });
 
