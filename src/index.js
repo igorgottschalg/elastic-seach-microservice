@@ -2,7 +2,7 @@ import 'dotenv/config';
 import cors from 'cors';
 import express from 'express';
 import bodyParser from 'body-parser';
-import elastic, { checkIndices, index } from './elastic-search';
+import elastic, {checkIndices, index} from './elastic-search';
 
 const app = express();
 app.use(cors());
@@ -19,21 +19,21 @@ const whitelist = process.env.DOMAINS.split(',');
 const corsOptions = (req, callback) => {
     let corsOptions;
     if (whitelist.indexOf(req.header('Origin')) !== -1) {
-        corsOptions = { origin: true }; // reflect (enable) the requested origin in the CORS response
+        corsOptions = {origin: true}; // reflect (enable) the requested origin in the CORS response
     } else {
-        corsOptions = { origin: false }; // disable CORS for this request
+        corsOptions = {origin: false}; // disable CORS for this request
     }
     callback(null, corsOptions); // callback expects two parameters: error and options
 };
 
 app.get('/search', cors(corsOptions), async (req, res) => {
     try {
-        const { body } = await elastic.search({
+        const {body} = await elastic.search({
             index,
             body: {
                 query: {
                     multi_match: {
-                        query: req.query.query,
+                        query: req.query.query ? req.query.query : '*',
                         fields: ['name', 'content', 'keywords'],
                     },
                 },
@@ -65,35 +65,36 @@ app.post('/add', async (req, res) => {
         .split(':');
 
     if (
-        login &&
-        password &&
-        login === auth.login &&
-        password === auth.password
+        !login ||
+        !password ||
+        login !== auth.login ||
+        password !== auth.password
     ) {
-        try {
-            const object = {
-                id: req.body.id,
-                fields: {
-                    id: req.body.id,
-                    content: req.body.content,
-                    name: req.body.name,
-                    image: req.body.image,
-                    url: req.body.url,
-                    post_type: req.body.post_type,
-                    keywords: req.body.keywords,
-                },
-            };
-            const { body } = await elastic.index({
-                index,
-                body: object,
-            });
-            res.status(200).send(body);
-        } catch (e) {
-            res.status(404).send(e);
-        }
+        res.set('WWW-Authenticate', 'Basic realm="401"'); // change this
+        res.status(401).send('Authentication required.');
     }
-    res.set('WWW-Authenticate', 'Basic realm="401"'); // change this
-    res.status(401).send('Authentication required.');
+
+    try {
+        const object = {
+            id: req.body.id,
+            fields: {
+                id: req.body.id,
+                content: req.body.content,
+                name: req.body.name,
+                image: req.body.image,
+                url: req.body.url,
+                post_type: req.body.post_type,
+                keywords: req.body.keywords,
+            },
+        };
+        const {body} = await elastic.index({
+            index,
+            body: object,
+        });
+        res.status(200).send(body);
+    } catch (e) {
+        res.status(404).send(e);
+    }
 });
 
 app.listen(process.env.PORT || 3000, () => {
